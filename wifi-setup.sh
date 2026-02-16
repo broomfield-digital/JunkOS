@@ -64,16 +64,17 @@ write_root_file() {
 usage() {
   cat <<'EOF'
 Usage:
-  ./wifi-setup.sh [options]
+  ./wifi-setup.sh SSID PASSWORD
+  ./wifi-setup.sh -s SSID -p PASSWORD [options]
 
 Options:
-  -s SSID       Wi-Fi network name (required)
-  -p PASSWORD   Wi-Fi password (required)
+  -s SSID       Wi-Fi network name
+  -p PASSWORD   Wi-Fi password
   -i IFACE      Wireless interface (default: wlan0)
   -c COUNTRY    Wi-Fi country code (default: US)
   -d DNS_LIST   Fallback DNS servers (space/comma-separated, default: 1.1.1.1 8.8.8.8)
   -B            Skip installing boot-time Wi-Fi recovery service
-  -h            Show this help
+  -h, --help    Show this help
 EOF
 }
 
@@ -485,6 +486,16 @@ EOF
 }
 
 main() {
+  # Handle --help before getopts (which only supports single-dash options)
+  for arg in "$@"; do
+    case "${arg}" in
+      --help)
+        usage
+        exit 0
+        ;;
+    esac
+  done
+
   while getopts ":s:p:i:c:d:Bh" opt; do
     case "${opt}" in
       s) WIFI_SSID="${OPTARG}" ;;
@@ -509,6 +520,15 @@ main() {
 
   WIFI_DNS_SERVERS="${WIFI_DNS_SERVERS//,/ }"
 
+  # Support positional arguments: SSID [PASSWORD]
+  if [ "$#" -ge 1 ] && [ -z "${WIFI_SSID}" ]; then
+    WIFI_SSID="$1"
+    shift
+  fi
+  if [ "$#" -ge 1 ] && [ -z "${WIFI_PASSWORD}" ]; then
+    WIFI_PASSWORD="$1"
+    shift
+  fi
   if [ "$#" -gt 0 ]; then
     die "unexpected positional arguments: $*"
   fi
