@@ -418,6 +418,12 @@ try_wpa_supplicant() {
 }
 
 main() {
+  # Load WiFi driver if needed (WILC SPI for TS-7800-v2)
+  if ! ip link show "${WIFI_INTERFACE}" >/dev/null 2>&1; then
+    modprobe wilc-spi 2>/dev/null || modprobe wilc_spi 2>/dev/null || true
+    sleep 2
+  fi
+
   if ! ip link show "${WIFI_INTERFACE}" >/dev/null 2>&1; then
     warn "interface not found: ${WIFI_INTERFACE}"
     exit 0
@@ -553,6 +559,13 @@ main() {
     else
       die "run as root or install sudo"
     fi
+  fi
+
+  # Load WiFi driver if needed (WILC SPI for TS-7800-v2)
+  if ! ip link show "${WIFI_INTERFACE}" >/dev/null 2>&1; then
+    log "interface ${WIFI_INTERFACE} not found, attempting to load driver"
+    modprobe wilc-spi 2>/dev/null || modprobe wilc_spi 2>/dev/null || true
+    sleep 2
   fi
 
   if ! ip link show "${WIFI_INTERFACE}" >/dev/null 2>&1; then
