@@ -63,6 +63,31 @@ systemctl disable discordia-wifi-ensure.service
 systemctl disable discordia-wifi-fixup.timer
 ```
 
+## Root Cause Analysis
+
+**Is the driver flaky because it can't handle modern routers?**
+
+Unlikely. The symptoms don't fit:
+
+- **Association works** - Modern router protocols are fine
+- **WPA2 handshake completes** - Encryption negotiation succeeds
+- **DHCP works** - Broadcast packets flow both directions
+- **Unicast fails** - Only direct device-to-device packets break
+
+If it were router incompatibility, association or WPA2 would fail. This looks like a **driver bug in the unicast TX/RX path** - the code that handles "send this packet to this specific MAC address" vs "broadcast to everyone."
+
+More likely culprits:
+
+1. **SPI timing issues** - The WILC3000 connects via SPI, which is timing-sensitive. Marginal signals cause data corruption or missed packets.
+
+2. **Interrupt handling** - We observed `UNKNOWN_INTERRUPT - 0x00000000` in dmesg. The driver is receiving interrupts it doesn't recognize. This is not confidence-inspiring.
+
+3. **Firmware bugs** - The WILC3000 runs internal firmware (`wilc3000_wifi_firmware`). Microchip's embedded firmware quality is... variable.
+
+4. **Power management lies** - Even with power_save "off" at the Linux level, the chip may be doing its own internal power management. The driver's power management hooks may not fully control chip behavior.
+
+5. **Driver immaturity** - The WILC driver originated in the kernel staging tree circa 2019 and never fully graduated to mainline. Staging drivers are explicitly "not ready for production." This one proves it.
+
 ## The Verdict
 
 The WILC3000 driver is not ready for production use. The hardware may be fine; the Linux driver is not. This module should be treated as decorative until Microchip improves driver quality.
