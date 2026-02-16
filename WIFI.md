@@ -47,11 +47,73 @@ This establishes a WiFi connection that works *for a while*. Expect:
 
 1. **Use ethernet when possible** - The OptConnect cellular gateway on eth0 is rock solid by comparison.
 
-2. **Consider a USB WiFi dongle** - Adapters using `ath9k` or `rtl8192` chipsets are far more reliable on Linux.
+2. **Consider a USB WiFi dongle** - See below for recommended adapters.
 
 3. **Keep expectations low** - This is development/debug access only. Do not rely on WILC for anything important.
 
 4. **Have serial console ready** - You will need it.
+
+## Recommended USB WiFi Adapters
+
+If you need reliable WiFi on the TS-7800-v2, bypass the WILC entirely with a USB adapter. Look for these chipsets with mature Linux drivers:
+
+### Atheros (ath9k_htc) - Best Choice
+
+The `ath9k_htc` driver is mainline, stable, and battle-tested. Look for:
+
+- **TP-Link TL-WN722N v1** (not v2/v3 - those use different chips)
+- **Atheros AR9271** based adapters
+
+```bash
+# Check if detected
+lsusb | grep -i atheros
+dmesg | grep ath9k
+```
+
+### Ralink/MediaTek (rt2800usb)
+
+Another solid mainline driver:
+
+- **TP-Link TL-WN727N**
+- **Ralink RT5370** based adapters (cheap, common)
+
+```bash
+# Check if detected
+lsusb | grep -i ralink
+dmesg | grep rt2800
+```
+
+### Realtek (rtl8192cu) - Acceptable
+
+Works but Realtek's Linux support is historically mediocre:
+
+- **TP-Link TL-WN823N**
+- **Realtek RTL8192CU** based adapters
+
+```bash
+# Check if detected
+lsusb | grep -i realtek
+dmesg | grep rtl8192
+```
+
+### What to Avoid
+
+- **Realtek RTL8188** - Driver issues, avoid
+- **Any adapter requiring out-of-tree drivers** - If it doesn't work with mainline kernel, it's a maintenance nightmare
+- **WiFi 6 (802.11ax) adapters** - Overkill, and driver support is immature
+- **Anything without clear Linux chipset info** - "Works with Linux" marketing is often lies
+
+### Installation
+
+Most USB adapters with the above chipsets should "just work" on Debian Stretch:
+
+```bash
+# Plug in adapter, then:
+ip link show  # Should see wlan1 or similar
+iwconfig      # Should show the new interface
+```
+
+Then configure with wpa_supplicant as usual, substituting the USB interface name for `wlan0`.
 
 ## Boot Services (Disabled)
 
