@@ -4,8 +4,11 @@ set -euo pipefail
 # One-command bootstrap for TS-7800-v2 + OptConnect neo2.
 #
 # Usage (serial console, as root):
+#   echo "nameserver 8.8.8.8" > /etc/resolv.conf
 #   curl -fsSL https://raw.githubusercontent.com/broomfield-digital/DiscordiaOS/main/bootstrap.sh | bash
-#   wget -qO- https://raw.githubusercontent.com/broomfield-digital/DiscordiaOS/main/bootstrap.sh | bash
+#
+# The resolv.conf line is required on a fresh board (no DNS configured).
+# bootstrap.sh will write a permanent resolv.conf as part of static eth0 setup.
 #
 # Environment overrides:
 #   DISCORDIA_REPO        (default: https://github.com/broomfield-digital/DiscordiaOS.git)
@@ -77,30 +80,27 @@ ensure_eth0_temporary() {
 }
 
 ensure_dns() {
-	if can_resolve_dns github.com; then
-		log "DNS resolution working"
-		return
-	fi
-
-	warn "DNS resolution failed; writing fallback nameservers"
-
+	# Always write resolv.conf.  DNS may appear to work via a temporary
+	# DHCP lease, but that config disappears after reboot.  We need our
+	# own copy so the rest of bootstrap (and subsequent boots) can resolve.
 	if [ -L /etc/resolv.conf ]; then
 		rm -f /etc/resolv.conf
 	fi
 
 	local dns
 	{
-		printf '# Managed by bootstrap.sh fallback DNS\n'
+		printf '# Managed by bootstrap.sh\n'
 		for dns in $ETH_DNS; do
 			printf 'nameserver %s\n' "$dns"
 		done
 	} >/etc/resolv.conf
+	log "wrote /etc/resolv.conf: $ETH_DNS"
 
 	if ! can_resolve_dns github.com; then
-		die "DNS still failing after fallback; check OptConnect connectivity"
+		die "DNS resolution failed; check connectivity and ETH_DNS ($ETH_DNS)"
 	fi
 
-	log "DNS fallback applied: $ETH_DNS"
+	log "DNS resolution working"
 }
 
 clone_or_update_repo() {

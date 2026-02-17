@@ -7,14 +7,11 @@ Setup scripts for TS-7800-v2 boards running Debian Stretch, designed for deploym
 Connect the TS-7800-v2 to the OptConnect neo2 via ethernet, open a serial console, and run:
 
 ```bash
+echo "nameserver 8.8.8.8" > /etc/resolv.conf
 curl -fsSL https://raw.githubusercontent.com/broomfield-digital/DiscordiaOS/main/bootstrap.sh | bash
 ```
 
-Or with wget:
-
-```bash
-wget -qO- https://raw.githubusercontent.com/broomfield-digital/DiscordiaOS/main/bootstrap.sh | bash
-```
+The `resolv.conf` line is required on a fresh board (no DNS out of the box). Bootstrap writes a permanent config as part of static eth0 setup.
 
 This single command will:
 
