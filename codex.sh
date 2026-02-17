@@ -128,6 +128,8 @@ Objective: ${PROMPT}
 Action log: Write a timestamped action log to ${PILOT_LOGFILE}.
 Create the directory if it does not exist. Log each action as a single
 line in the format: YYYY-MM-DDTHH:MM:SSZ ACTION description
+Timestamps MUST come from the system clock (e.g. date -u) on every
+entry. Never estimate, hard-code, or infer the time.
 Write the first entry when you begin and the last entry with the outcome
 (COMPLETE or FAILED). Example entries:
   2026-02-16T17:30:00Z START objective accepted
