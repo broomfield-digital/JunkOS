@@ -38,6 +38,7 @@ After bootstrap completes, look up the VPN-routable IP on the OptConnect Summit 
 | `ssh-setup.sh` | Enables and configures sshd |
 | `wifi-setup.sh` | Wi-Fi configuration (for local network access when needed) |
 | `codex-setup.sh` | Installs runtime dependencies for ARMv7 Codex binaries |
+| `codex.sh` | Codex execution wrapper with protocol-driven pilot mode |
 
 ## Environment Overrides
 
@@ -53,3 +54,20 @@ After bootstrap completes, look up the VPN-routable IP on the OptConnect Summit 
 | `DISCORDIA_DIR` | `/root/DiscordiaOS` | Clone destination |
 
 See individual scripts for additional overrides.
+
+## Codex Pilot Mode
+
+`codex.sh` supports a protocol-driven pilot mode where a single Codex session executes an autonomous control loop. A protocol file defines the operating rules (command interface, safety guardrails, cycle pattern) and the prompt specifies the objective.
+
+```bash
+# one-shot (existing behavior)
+./codex.sh "Reply with exactly: connected"
+
+# pilot mode: protocol file + objective
+./codex.sh -p PROTOCOL.md "Run 3 cycles and report"
+./codex.sh -p PROTOCOL.md -f objective.txt
+```
+
+The protocol file is read and prepended to the prompt. Codex reads the protocol, executes the objective autonomously, and exits when the objective is complete or on unrecoverable error.
+
+See `PILOT_PROTOCOL_EXAMPLE.md` for a minimal working protocol that exercises the sense-act-verify cycle.

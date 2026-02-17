@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Wrapper for one-shot Codex usage on TS-7800-v2.
+# Wrapper for Codex usage on TS-7800-v2.
 # Supports prompt input via:
 #   1) positional args: ./codex.sh "Reply with exactly: connected"
 #   2) file input:      ./codex.sh -f prompt.txt
 #   3) stdin redirect:  ./codex.sh < prompt.txt
+#
+# Protocol-driven pilot mode:
+#   ./codex.sh -p PROTOCOL.md "objective text"
+#   ./codex.sh -p PROTOCOL.md -f objective.txt
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 DEFAULT_CODEX_BIN="codex"
@@ -25,9 +29,13 @@ Usage:
   ./codex.sh [options] [prompt...]
   ./codex.sh -f prompt.txt
   ./codex.sh < prompt.txt
+  ./codex.sh -p PROTOCOL.md "objective"
 
 Options:
   -f FILE   Read prompt text from FILE.
+  -p FILE   Protocol file for pilot mode. The file contents are
+            prepended to the prompt as the operating protocol.
+            The prompt becomes the objective.
   -C DIR    Override working directory (default: /root/DiscordiaOS).
   -h        Show this help.
 
@@ -41,9 +49,11 @@ EOF
 }
 
 prompt_file=""
-while getopts ":f:C:h" opt; do
+protocol_file=""
+while getopts ":f:p:C:h" opt; do
   case "${opt}" in
     f) prompt_file="${OPTARG}" ;;
+    p) protocol_file="${OPTARG}" ;;
     C) CODEX_WORKDIR="${OPTARG}" ;;
     h)
       usage
@@ -88,6 +98,30 @@ fi
 if [ -z "${PROMPT}" ]; then
   echo "Prompt is empty." >&2
   exit 2
+fi
+
+# --- Protocol-driven pilot mode ---
+if [ -n "${protocol_file}" ]; then
+  if [ ! -f "${protocol_file}" ]; then
+    echo "Protocol file not found: ${protocol_file}" >&2
+    exit 1
+  fi
+  PROTOCOL_BODY="$(cat "${protocol_file}")"
+  if [ -z "${PROTOCOL_BODY}" ]; then
+    echo "Protocol file is empty: ${protocol_file}" >&2
+    exit 1
+  fi
+  PROMPT="You are operating under the following protocol.
+Read it completely before taking any action.
+
+--- BEGIN PROTOCOL ---
+${PROTOCOL_BODY}
+--- END PROTOCOL ---
+
+Objective: ${PROMPT}
+
+Execute according to the protocol. Stop and report if you encounter
+an unrecoverable error or if the objective is complete."
 fi
 
 EXEC_HELP="$("${CODEX_BIN}" exec --help 2>&1 || true)"
