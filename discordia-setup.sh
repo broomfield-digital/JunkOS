@@ -465,6 +465,19 @@ ensure_data_layout() {
 	log "data directory layout ensured"
 }
 
+ensure_locale() {
+	local line='export LC_ALL=C.UTF-8'
+	local profile="/root/.bashrc"
+
+	if [ -f "$profile" ] && grep -qxF "$line" "$profile"; then
+		log "UTF-8 locale already set in $profile"
+		return
+	fi
+
+	printf '\n%s\n' "$line" >>"$profile"
+	log "added UTF-8 locale to $profile"
+}
+
 main() {
 	local discordia_key=""
 
@@ -492,6 +505,7 @@ main() {
 	blacklist_wilc
 	configure_fstab
 	ensure_data_layout
+	ensure_locale
 
 	log "setup complete"
 	log "re-run anytime; script is designed to be idempotent"
