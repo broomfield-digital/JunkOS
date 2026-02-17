@@ -436,7 +436,7 @@ try_wpa_supplicant() {
 main() {
   # Load WiFi driver if needed (WILC SPI for TS-7800-v2)
   if ! ip link show "${WIFI_INTERFACE}" >/dev/null 2>&1; then
-    modprobe wilc-spi 2>/dev/null || modprobe wilc_spi 2>/dev/null || true
+    modprobe --ignore-install wilc-spi 2>/dev/null || modprobe --ignore-install wilc_spi 2>/dev/null || true
     sleep 2
   fi
 
@@ -645,10 +645,12 @@ main() {
     fi
   fi
 
-  # Load WiFi driver if needed (WILC SPI for TS-7800-v2)
+  # Load WiFi driver if needed (WILC SPI for TS-7800-v2).
+  # --ignore-install bypasses the /bin/true override in no-wilc.conf
+  # that prevents auto-loading at boot.
   if ! ip link show "${WIFI_INTERFACE}" >/dev/null 2>&1; then
     log "interface ${WIFI_INTERFACE} not found, attempting to load driver"
-    modprobe wilc-spi 2>/dev/null || modprobe wilc_spi 2>/dev/null || true
+    modprobe --ignore-install wilc-spi 2>/dev/null || modprobe --ignore-install wilc_spi 2>/dev/null || true
     sleep 2
   fi
 
