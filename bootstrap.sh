@@ -157,6 +157,21 @@ iface ${ETH_IFACE} inet static
 EOF
 	log "wrote static config: $cfg ($addr/$prefix via $ETH_GATEWAY)"
 
+	# Write a persistent /etc/resolv.conf.  The dns-nameservers directive
+	# in ifupdown config only takes effect when the resolvconf package is
+	# installed, which we don't require.
+	if [ -L /etc/resolv.conf ]; then
+		rm -f /etc/resolv.conf
+	fi
+	local dns
+	{
+		printf '# Managed by bootstrap.sh\n'
+		for dns in $ETH_DNS; do
+			printf 'nameserver %s\n' "$dns"
+		done
+	} >/etc/resolv.conf
+	log "wrote /etc/resolv.conf: $ETH_DNS"
+
 	# Kill any DHCP client from the temporary lease before switching to static.
 	pkill -f "dhclient.*${ETH_IFACE}" >/dev/null 2>&1 || true
 	pkill -f "udhcpc.*${ETH_IFACE}" >/dev/null 2>&1 || true
